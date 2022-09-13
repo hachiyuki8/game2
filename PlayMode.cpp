@@ -15,12 +15,6 @@
 
 #include <random>
 
-const std::string PIZZA = "Pizza";
-const std::string SAUSAGE = "Sausage";
-const std::string PEPPER = "Pepper";
-const std::string PEPPERONI = "Pepperoni";
-const std::string OLIVE = "Olive";
-
 const std::string CAKE = "Cake";
 const std::string CHOCOLATE = "Chocolate";
 const std::string KIWI = "Kiwi";
@@ -83,26 +77,46 @@ PlayMode::PlayMode() : scene(*board_scene) {
 			highlight_pipeline.type = drawable.pipeline.type;
 			highlight_pipeline.start = drawable.pipeline.start;
 			highlight_pipeline.count = drawable.pipeline.count;
-		} else if (drawable.transform->name == PIZZA) {
-			pizza_pipeline.type = drawable.pipeline.type;
-			pizza_pipeline.start = drawable.pipeline.start;
-			pizza_pipeline.count = drawable.pipeline.count;
-		} else if (drawable.transform->name == SAUSAGE) {
-			sausage_pipeline.type = drawable.pipeline.type;
-			sausage_pipeline.start = drawable.pipeline.start;
-			sausage_pipeline.count = drawable.pipeline.count;
-		} else if (drawable.transform->name == PEPPER) {
-			pepper_pipeline.type = drawable.pipeline.type;
-			pepper_pipeline.start = drawable.pipeline.start;
-			pepper_pipeline.count = drawable.pipeline.count;
-		} else if (drawable.transform->name == PEPPERONI) {
-			pepperoni_pipeline.type = drawable.pipeline.type;
-			pepperoni_pipeline.start = drawable.pipeline.start;
-			pepperoni_pipeline.count = drawable.pipeline.count;
-		} else if (drawable.transform->name == OLIVE) {
-			olive_pipeline.type = drawable.pipeline.type;
-			olive_pipeline.start = drawable.pipeline.start;
-			olive_pipeline.count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Pizza0011") {
+			pizzas[0].type = drawable.pipeline.type;
+			pizzas[0].start = drawable.pipeline.start;
+			pizzas[0].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Pizza0101") {
+			pizzas[1].type = drawable.pipeline.type;
+			pizzas[1].start = drawable.pipeline.start;
+			pizzas[1].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Pizza0110") {
+			pizzas[2].type = drawable.pipeline.type;
+			pizzas[2].start = drawable.pipeline.start;
+			pizzas[2].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Pizza1001") {
+			pizzas[3].type = drawable.pipeline.type;
+			pizzas[3].start = drawable.pipeline.start;
+			pizzas[3].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Pizza1010") {
+			pizzas[4].type = drawable.pipeline.type;
+			pizzas[4].start = drawable.pipeline.start;
+			pizzas[4].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Pizza0111") {
+			pizzas[5].type = drawable.pipeline.type;
+			pizzas[5].start = drawable.pipeline.start;
+			pizzas[5].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Pizza1011") {
+			pizzas[6].type = drawable.pipeline.type;
+			pizzas[6].start = drawable.pipeline.start;
+			pizzas[6].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Pizza1101") {
+			pizzas[7].type = drawable.pipeline.type;
+			pizzas[7].start = drawable.pipeline.start;
+			pizzas[7].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Pizza1110") {
+			pizzas[8].type = drawable.pipeline.type;
+			pizzas[8].start = drawable.pipeline.start;
+			pizzas[8].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Pizza1111") {
+			pizzas[9].type = drawable.pipeline.type;
+			pizzas[9].start = drawable.pipeline.start;
+			pizzas[9].count = drawable.pipeline.count;
 		} else if (drawable.transform->name == CAKE) {
 			cake_pipeline.type = drawable.pipeline.type;
 			cake_pipeline.start = drawable.pipeline.start;
@@ -142,6 +156,14 @@ PlayMode::PlayMode() : scene(*board_scene) {
 		}
 	}
 	highlight_transform->parent = chunk_transforms[cur_row*SIZE+cur_col];
+	
+	for (uint16_t idx = 0; idx < SIZE*SIZE; idx++) {
+		piece_drop_speed[idx] = -1.0f;
+		momentum[idx] = 1.0f;
+	}
+
+	srand(time(NULL));
+	generate_new_piece(false);
 }
 
 PlayMode::~PlayMode() {
@@ -183,11 +205,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_RETURN) {
 			if (drop_piece_on_board()) {
-				generate_new_piece();
+				generate_new_piece(false);
 			}
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_x) {
-			generate_new_piece();
+			generate_new_piece(true);
 			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
@@ -237,13 +259,21 @@ bool PlayMode::drop_piece_on_board() {
 
 	// TODO: check constraints
 	board[cur_row*SIZE+cur_col] = true;
-	board_content[cur_row*SIZE+cur_col] = cur_piece;
+	board_piece_transforms[cur_row*SIZE+cur_col] = cur_piece;
+
+	cur_piece->position = glm::vec3(-0.8f, 0.0f, 10.0f);
+	cur_piece->scale = glm::vec3(1.0f, 1.0f, 3.0f);
+	cur_piece->parent = chunk_transforms[cur_row*SIZE+cur_col];
 	pieces_dropped += 1;
 	update_score();
 	return true;
 }
 
-void PlayMode::generate_new_piece() {
+void PlayMode::generate_new_piece(bool discard) {
+	if (discard) {
+		scene.drawables.pop_back();
+	}
+
 	if (pieces_remaining == 0) {
 		gameState = GameState::END;
 		if (DEBUG) {
@@ -252,7 +282,27 @@ void PlayMode::generate_new_piece() {
 		return;
 	} 
 
-	// TODO: generate a new random piece
+	bool is_pizza = rand() % 2 == 0;
+	is_pizza = true;
+	if (is_pizza) {
+		int idx = rand() % 10;
+		cur_piece = new Scene::Transform;
+		cur_piece->name = "Pizza " + std::to_string(pizza_idx_to_flag[idx]);
+		cur_piece->position = glm::vec3(1.0f, 0.6f, -5.0f);
+		cur_piece->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+		cur_piece->scale = glm::vec3(0.7f, 0.7f, 1.0f);
+		cur_piece->parent = camera->transform;
+		scene.drawables.emplace_back(cur_piece);
+
+		Scene::Drawable &drawable = scene.drawables.back();
+		drawable.pipeline = lit_color_texture_program_pipeline;
+		drawable.pipeline.vao = board_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = pizzas[idx].type;
+		drawable.pipeline.start = pizzas[idx].start;
+		drawable.pipeline.count = pizzas[idx].count;
+	} else {
+		std::cout << "DEBUG" << std::endl;
+	}
 	pieces_remaining -= 1;
 }
 
@@ -284,6 +334,21 @@ void PlayMode::update(float elapsed) {
 	// );
 
 	highlight_transform->parent = chunk_transforms[cur_row*SIZE+cur_col];
+
+	{ // drop the pieces
+		for (uint16_t idx = 0; idx < SIZE*SIZE; idx++) {
+			if (!board[idx] or momentum[idx] <= 0.0f) {
+				continue;
+			}
+			piece_drop_speed[idx] += gravity * elapsed;
+			board_piece_transforms[idx]->position.z = board_piece_transforms[idx]->position.z + elapsed * piece_drop_speed[idx];
+			if (board_piece_transforms[idx]->position.z <= board_z_offset) {
+				board_piece_transforms[idx]->position.z = board_z_offset;
+				piece_drop_speed[idx] = piece_drop_speed[idx] * -0.5f;
+				momentum[idx] = piece_drop_speed[idx] * mass;
+			}
+		}
+	}
 
 	{ // move camera
 

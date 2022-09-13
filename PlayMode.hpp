@@ -6,13 +6,14 @@
 
 #include <vector>
 #include <deque>
+#include <map>
 
 const bool DEBUG = true;
 
 struct Pizza {
-	bool pepperoni;
-	bool black_olive;
+	bool olive;
 	bool pepper;
+	bool pepperoni;
 	bool sausage;
 };
 
@@ -61,11 +62,10 @@ struct PlayMode : Mode {
 
 	PipelineInfo chunk_pipeline;
 	PipelineInfo highlight_pipeline;
-	PipelineInfo pizza_pipeline;
-	PipelineInfo sausage_pipeline;
-	PipelineInfo pepper_pipeline;
-	PipelineInfo pepperoni_pipeline;
-	PipelineInfo olive_pipeline;
+	PipelineInfo pizzas [10];
+	std::map<int, int> pizza_idx_to_flag = {
+		{0, 3}, {1, 5}, {2, 6}, {3, 9}, {4, 10}, {5, 7}, {6, 11}, {7, 13}, {8, 14}, {9, 15}
+	};
 	PipelineInfo cake_pipeline;
 
 	Scene::Transform *chunk_transforms[SIZE*SIZE];
@@ -86,9 +86,14 @@ struct PlayMode : Mode {
 	float chunk_size = 2.0f;
 
 	bool board[SIZE*SIZE];
-	Piece board_content[SIZE*SIZE];
+	Scene::Transform *board_piece_transforms[SIZE*SIZE];
+	float piece_drop_speed[SIZE*SIZE];
+	float momentum[SIZE*SIZE];
+	float gravity = -9.8f;
+	float mass = 10.0f;
+	float board_z_offset = 1.5f;
 
-	Piece cur_piece;
+	Scene::Transform *cur_piece;
 	uint16_t pieces_dropped = 0;
 	uint16_t pieces_remaining = 100;
 	uint16_t cur_score = 0;
@@ -96,7 +101,7 @@ struct PlayMode : Mode {
 	virtual bool drop_piece_on_board();
 	virtual void update_score();
 	// generate a new piece of pizza or cake if there's any chance left
-	virtual void generate_new_piece();
+	virtual void generate_new_piece(bool discard);
 
 	//hexapod leg to wobble:
 	// Scene::Transform *hip = nullptr;
