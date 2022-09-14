@@ -179,7 +179,8 @@ PlayMode::PlayMode() : scene(*board_scene) {
 		momentum[idx] = 1.0f;
 	}
 
-	srand(time(NULL));
+	// random seed for generating pieces
+	srand((unsigned int) time(NULL));
 	generate_new_piece(false);
 }
 
@@ -525,7 +526,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 					glm::vec3(-aspect + 0.1f * H, 0.9f, 0.0),
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-				float ofs = 2.0f / drawable_size.y;
 				lines.draw_text("No more food remaining! Game ended with score " + std::to_string(cur_score),
 					glm::vec3(-aspect + 0.1f * H + ofs, 0.9f + ofs, 0.0),
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
@@ -535,7 +535,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 					glm::vec3(-aspect + 0.1f * H, 0.9f, 0.0),
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-				float ofs = 2.0f / drawable_size.y;
 				lines.draw_text("You have filled all the space! Game completed with score " + std::to_string(cur_score),
 					glm::vec3(-aspect + 0.1f * H + ofs, 0.9f + ofs, 0.0),
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
@@ -546,7 +545,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 				glm::vec3(-aspect + 0.1f * H, 0.9f, 0.0),
 				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-			float ofs = 2.0f / drawable_size.y;
 			lines.draw_text("Current Score - " + std::to_string(cur_score) + " | # of Pieces Remaining - " + std::to_string(pieces_remaining) + "/" + std::to_string(50),
 				glm::vec3(-aspect + 0.1f * H + ofs, 0.9f + ofs, 0.0),
 				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
@@ -556,7 +554,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 					glm::vec3(-aspect + 0.1f * H, 0.8f, 0.0),
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-				float ofs = 2.0f / drawable_size.y;
 				lines.draw_text("Must share at least 2 toppings with any adjacent (orthogonal) piece or be isolated",
 					glm::vec3(-aspect + 0.1f * H + ofs, 0.8f + ofs, 0.0),
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
@@ -566,7 +563,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 					glm::vec3(-aspect + 0.1f * H, 0.8f, 0.0),
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-				float ofs = 2.0f / drawable_size.y;
 				lines.draw_text("Space already filled",
 					glm::vec3(-aspect + 0.1f * H + ofs, 0.8f + ofs, 0.0),
 					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
