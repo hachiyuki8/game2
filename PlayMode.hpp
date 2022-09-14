@@ -8,7 +8,7 @@
 #include <deque>
 #include <map>
 
-const bool DEBUG = true;
+const bool DEBUG = false;
 
 struct Pizza {
 	bool olive;

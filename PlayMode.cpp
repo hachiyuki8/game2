@@ -161,12 +161,12 @@ PlayMode::PlayMode() : scene(*board_scene) {
 			chunk_transforms[r*SIZE+c]->scale = glm::vec3(1.0f, 1.0f, 0.2f);
 			scene.drawables.emplace_back(chunk_transforms[r*SIZE+c]);
 
-			Scene::Drawable &drawable = scene.drawables.back();
-			drawable.pipeline = lit_color_texture_program_pipeline;
-			drawable.pipeline.vao = board_meshes_for_lit_color_texture_program;
-			drawable.pipeline.type = chunk_pipeline.type;
-			drawable.pipeline.start = chunk_pipeline.start;
-			drawable.pipeline.count = chunk_pipeline.count;
+			Scene::Drawable &d = scene.drawables.back();
+			d.pipeline = lit_color_texture_program_pipeline;
+			d.pipeline.vao = board_meshes_for_lit_color_texture_program;
+			d.pipeline.type = chunk_pipeline.type;
+			d.pipeline.start = chunk_pipeline.start;
+			d.pipeline.count = chunk_pipeline.count;
 
 			board[r*SIZE+c] = false;
 		}
@@ -208,16 +208,16 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_UP) {
-			cur_row = std::max(0, cur_row - 1);
+			cur_row = (uint16_t) std::max(0, cur_row - 1);
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_DOWN) {
-			cur_row = std::min(num_rows - 1, cur_row + 1);
+			cur_row = (uint16_t) std::min(num_rows - 1, cur_row + 1);
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_LEFT) {
-			cur_col = std::max(0, cur_col - 1);
+			cur_col = (uint16_t) std::max(0, cur_col - 1);
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_RIGHT) {
-			cur_col = std::min(num_cols - 1, cur_col + 1);
+			cur_col = (uint16_t) std::min(num_cols - 1, cur_col + 1);
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_RETURN) {
 			if (gameState == GameState::IN_PROGRESS) {
@@ -430,7 +430,7 @@ void PlayMode::update(float elapsed) {
 
 	{ // drop the pieces
 		for (uint16_t idx = 0; idx < SIZE*SIZE; idx++) {
-			if (!board[idx] or momentum[idx] <= 0.0f) {
+			if (!board[idx] || momentum[idx] <= 0.0f) {
 				continue;
 			}
 			float offset;
