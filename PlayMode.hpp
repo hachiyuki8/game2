@@ -38,7 +38,7 @@ struct PipelineInfo {
 	GLuint count = 0; 
 };
 
-const uint16_t SIZE = 8;
+const uint16_t SIZE = 6;
 
 struct PlayMode : Mode {
 	PlayMode();
@@ -64,9 +64,12 @@ struct PlayMode : Mode {
 	PipelineInfo highlight_pipeline;
 	PipelineInfo pizzas [10];
 	std::map<int, int> pizza_idx_to_flag = {
-		{0, 3}, {1, 5}, {2, 6}, {3, 9}, {4, 10}, {5, 7}, {6, 11}, {7, 13}, {8, 14}, {9, 15}
+		{0, 3}, {1, 5}, {2, 6}, {3, 15}, {4, 10}, {5, 7}, {6, 11}, {7, 13}, {8, 14}, {9, 15}
 	};
-	PipelineInfo cake_pipeline;
+	PipelineInfo cakes [10];
+	std::map<int, int> cake_idx_to_flag = {
+		{0, 5}, {1, 6}, {2, 7}, {3, 9}, {4, 10}, {5, 11}, {6, 15}, {7, 13}, {8, 14}, {9, 15}
+	};
 
 	Scene::Transform *chunk_transforms[SIZE*SIZE];
 	Scene::Transform *highlight_transform;
@@ -76,7 +79,7 @@ struct PlayMode : Mode {
 		IN_PROGRESS,
 		END,
 	};
-	GameState gameState = GameState::START;
+	GameState gameState = GameState::IN_PROGRESS;
 
 	//board
 	uint16_t num_rows = SIZE;
@@ -89,19 +92,24 @@ struct PlayMode : Mode {
 	Scene::Transform *board_piece_transforms[SIZE*SIZE];
 	float piece_drop_speed[SIZE*SIZE];
 	float momentum[SIZE*SIZE];
-	float gravity = -9.8f;
+	float gravity = -78.4f;
 	float mass = 10.0f;
-	float board_z_offset = 1.5f;
+	float board_z_offset_pizza = 1.5f;
+	float board_z_offset_cake = 3.0f;
 
 	Scene::Transform *cur_piece;
 	uint16_t pieces_dropped = 0;
-	uint16_t pieces_remaining = 100;
+	uint16_t pieces_remaining = 50;
 	uint16_t cur_score = 0;
 	// drop the current piece on the selected position on the board if it's valid
 	virtual bool drop_piece_on_board();
 	virtual void update_score();
 	// generate a new piece of pizza or cake if there's any chance left
 	virtual void generate_new_piece(bool discard);
+	virtual int get_index_from_name(std::string name);
+	virtual std::list<std::string> get_neighbor_names();
+
+	int msg_flag = 0;
 
 	//hexapod leg to wobble:
 	// Scene::Transform *hip = nullptr;

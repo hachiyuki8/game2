@@ -10,14 +10,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-// for glm::to_stirng();
-#include <glm/gtx/string_cast.hpp>
-
 #include <random>
-
-const std::string CAKE = "Cake";
-const std::string CHOCOLATE = "Chocolate";
-const std::string KIWI = "Kiwi";
 
 const std::string CHUNK = "Chunk";
 const std::string HIGHLIGHT = "Highlight";
@@ -49,25 +42,12 @@ Load< Scene > board_scene(LoadTagDefault, []() -> Scene const * {
 });
 
 PlayMode::PlayMode() : scene(*board_scene) {
-	//get pointers to leg for convenience:
-	// for (auto &transform : scene.transforms) {
-	// 	if (transform.name == "Hip.FL") hip = &transform;
-	// 	else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
-	// 	else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
-	// }
-	// if (hip == nullptr) throw std::runtime_error("Hip not found.");
-	// if (upper_leg == nullptr) throw std::runtime_error("Upper leg not found.");
-	// if (lower_leg == nullptr) throw std::runtime_error("Lower leg not found.");
-
-	// hip_base_rotation = hip->rotation;
-	// upper_leg_base_rotation = upper_leg->rotation;
-	// lower_leg_base_rotation = lower_leg->rotation;
-
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
 
 	// initialize game state
+	// pizzas and cakes
 	for (auto &drawable : scene.drawables) {
 		if (drawable.transform->name == CHUNK) {
 			chunk_pipeline.type = drawable.pipeline.type;
@@ -89,10 +69,6 @@ PlayMode::PlayMode() : scene(*board_scene) {
 			pizzas[2].type = drawable.pipeline.type;
 			pizzas[2].start = drawable.pipeline.start;
 			pizzas[2].count = drawable.pipeline.count;
-		} else if (drawable.transform->name == "Pizza1001") {
-			pizzas[3].type = drawable.pipeline.type;
-			pizzas[3].start = drawable.pipeline.start;
-			pizzas[3].count = drawable.pipeline.count;
 		} else if (drawable.transform->name == "Pizza1010") {
 			pizzas[4].type = drawable.pipeline.type;
 			pizzas[4].start = drawable.pipeline.start;
@@ -114,16 +90,55 @@ PlayMode::PlayMode() : scene(*board_scene) {
 			pizzas[8].start = drawable.pipeline.start;
 			pizzas[8].count = drawable.pipeline.count;
 		} else if (drawable.transform->name == "Pizza1111") {
+			pizzas[3].type = drawable.pipeline.type;
+			pizzas[3].start = drawable.pipeline.start;
+			pizzas[3].count = drawable.pipeline.count;
 			pizzas[9].type = drawable.pipeline.type;
 			pizzas[9].start = drawable.pipeline.start;
 			pizzas[9].count = drawable.pipeline.count;
-		} else if (drawable.transform->name == CAKE) {
-			cake_pipeline.type = drawable.pipeline.type;
-			cake_pipeline.start = drawable.pipeline.start;
-			cake_pipeline.count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Cake0101") {
+			cakes[0].type = drawable.pipeline.type;
+			cakes[0].start = drawable.pipeline.start;
+			cakes[0].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Cake0110") {
+			cakes[1].type = drawable.pipeline.type;
+			cakes[1].start = drawable.pipeline.start;
+			cakes[1].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Cake0111") {
+			cakes[2].type = drawable.pipeline.type;
+			cakes[2].start = drawable.pipeline.start;
+			cakes[2].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Cake1001") {
+			cakes[3].type = drawable.pipeline.type;
+			cakes[3].start = drawable.pipeline.start;
+			cakes[3].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Cake1010") {
+			cakes[4].type = drawable.pipeline.type;
+			cakes[4].start = drawable.pipeline.start;
+			cakes[4].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Cake1011") {
+			cakes[5].type = drawable.pipeline.type;
+			cakes[5].start = drawable.pipeline.start;
+			cakes[5].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Cake1101") {
+			cakes[7].type = drawable.pipeline.type;
+			cakes[7].start = drawable.pipeline.start;
+			cakes[7].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Cake1110") {
+			cakes[8].type = drawable.pipeline.type;
+			cakes[8].start = drawable.pipeline.start;
+			cakes[8].count = drawable.pipeline.count;
+		} else if (drawable.transform->name == "Cake1111") {
+			cakes[6].type = drawable.pipeline.type;
+			cakes[6].start = drawable.pipeline.start;
+			cakes[6].count = drawable.pipeline.count;
+			cakes[9].type = drawable.pipeline.type;
+			cakes[9].start = drawable.pipeline.start;
+			cakes[9].count = drawable.pipeline.count;
 		} 
 	}
 
+	// cursor
 	scene.drawables.clear();
 	highlight_transform = new Scene::Transform;
 	highlight_transform->name = "Highlight";
@@ -131,6 +146,7 @@ PlayMode::PlayMode() : scene(*board_scene) {
 	highlight_transform->scale = glm::vec3(1.0f, 1.0f, 1.0f);
 	scene.drawables.emplace_back(highlight_transform);
 
+	// board
 	Scene::Drawable &drawable = scene.drawables.back();
 	drawable.pipeline = lit_color_texture_program_pipeline;
 	drawable.pipeline.vao = board_meshes_for_lit_color_texture_program;
@@ -157,8 +173,9 @@ PlayMode::PlayMode() : scene(*board_scene) {
 	}
 	highlight_transform->parent = chunk_transforms[cur_row*SIZE+cur_col];
 	
+	// physics from drop animation
 	for (uint16_t idx = 0; idx < SIZE*SIZE; idx++) {
-		piece_drop_speed[idx] = -1.0f;
+		piece_drop_speed[idx] = -mass;
 		momentum[idx] = 1.0f;
 	}
 
@@ -170,7 +187,6 @@ PlayMode::~PlayMode() {
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
-
 	if (evt.type == SDL_KEYDOWN) {
 		if (evt.key.keysym.sym == SDLK_ESCAPE) {
 			SDL_SetRelativeMouseMode(SDL_FALSE);
@@ -204,12 +220,16 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			cur_col = std::min(num_cols - 1, cur_col + 1);
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_RETURN) {
-			if (drop_piece_on_board()) {
-				generate_new_piece(false);
+			if (gameState == GameState::IN_PROGRESS) {
+				if (drop_piece_on_board()) {
+					generate_new_piece(false);
+				}
 			}
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_x) {
-			generate_new_piece(true);
+			if (gameState == GameState::IN_PROGRESS) {
+				generate_new_piece(true);
+			}
 			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
@@ -249,23 +269,85 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	return false;
 }
 
+std::list<std::string> PlayMode::get_neighbor_names() {
+	std::list<std::string> neighbors;
+	if (cur_row - 1 >= 0 && board[(cur_row-1)*SIZE+cur_col]) {
+		neighbors.push_back(board_piece_transforms[(cur_row-1)*SIZE+cur_col]->name);
+	}
+	if (cur_row + 1 < SIZE && board[(cur_row+1)*SIZE+cur_col]) {
+		neighbors.push_back(board_piece_transforms[(cur_row+1)*SIZE+cur_col]->name);
+	}
+	if (cur_col - 1 >= 0 && board[cur_row*SIZE+(cur_col-1)]) {
+		neighbors.push_back(board_piece_transforms[cur_row*SIZE+(cur_col-1)]->name);
+	}
+	if (cur_col + 1 < SIZE && board[cur_row*SIZE+(cur_col+1)]) {
+		neighbors.push_back(board_piece_transforms[cur_row*SIZE+(cur_col+1)]->name);
+	}
+	return neighbors;
+}
+
+int PlayMode::get_index_from_name(std::string name) {
+	if (name[0] == 'P') {
+		return std::stoi(name.substr(6));
+	} else {
+		return std::stoi(name.substr(5));
+	}
+}
+
 bool PlayMode::drop_piece_on_board() {
 	if (board[cur_row*SIZE+cur_col]) {
 		if (DEBUG) {
 			std::cout << "[logger] (" << cur_row << "," << cur_col << ") occupied" << std::endl;
 		}
+		msg_flag = 2;
 		return false; // current position already occupied
 	}
 
-	// TODO: check constraints
+	// check if placement is valid
+	std::list<std::string> neighbors = get_neighbor_names();
+	if (neighbors.size() > 0) {
+		std::string cur_name = cur_piece->name;
+		bool flag = false;
+		for (auto const &name : neighbors) {
+			int cur_idx = get_index_from_name(cur_name);
+			int idx = get_index_from_name(name);
+			int count = 0;
+			for (int i = 0; i < 4; i++) {
+				if ((idx & 1) == 1 && (cur_idx & 1) == 1) {
+					count += 1;
+				}
+				idx >>= 1;
+				cur_idx >>= 1;
+			}
+			// share at least 2 toppings with a piece of the same kind among orthogonal neighbors
+			if (name[0] == cur_name[0] && count >= 2) {
+				flag = true;
+				break;
+			}
+		}
+		if (!flag) {
+			msg_flag = 1;
+			return false;
+		}
+	}
+
+	// place the piece and set its drop animation
 	board[cur_row*SIZE+cur_col] = true;
 	board_piece_transforms[cur_row*SIZE+cur_col] = cur_piece;
-
-	cur_piece->position = glm::vec3(-0.8f, 0.0f, 10.0f);
-	cur_piece->scale = glm::vec3(1.0f, 1.0f, 3.0f);
+	cur_piece->position = glm::vec3(-0.8f, 0.0f, 20.0f);
+	cur_piece->scale = glm::vec3(1.0f, 1.0f, 5.0f);
+	if (cur_piece->name[0] == 'C') {
+		cur_piece->scale = glm::vec3(1.2f, 1.2f, 3.0f);
+	}
 	cur_piece->parent = chunk_transforms[cur_row*SIZE+cur_col];
 	pieces_dropped += 1;
+	msg_flag = 0;
 	update_score();
+
+	if (pieces_dropped == SIZE * SIZE) {
+		gameState = GameState::END;
+		msg_flag = 4;
+	}
 	return true;
 }
 
@@ -276,6 +358,7 @@ void PlayMode::generate_new_piece(bool discard) {
 
 	if (pieces_remaining == 0) {
 		gameState = GameState::END;
+		msg_flag = 3;
 		if (DEBUG) {
 			std::cout << "[logger] no more pieces remaining" << std::endl;
 		}	
@@ -283,7 +366,6 @@ void PlayMode::generate_new_piece(bool discard) {
 	} 
 
 	bool is_pizza = rand() % 2 == 0;
-	is_pizza = true;
 	if (is_pizza) {
 		int idx = rand() % 10;
 		cur_piece = new Scene::Transform;
@@ -301,13 +383,42 @@ void PlayMode::generate_new_piece(bool discard) {
 		drawable.pipeline.start = pizzas[idx].start;
 		drawable.pipeline.count = pizzas[idx].count;
 	} else {
-		std::cout << "DEBUG" << std::endl;
+		int idx = rand() % 10;
+		cur_piece = new Scene::Transform;
+		cur_piece->name = "Cake " + std::to_string(cake_idx_to_flag[idx]);
+		cur_piece->position = glm::vec3(1.0f, 0.6f, -5.0f);
+		cur_piece->rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+		cur_piece->scale = glm::vec3(0.8f, 0.8f, 1.0f);
+		cur_piece->parent = camera->transform;
+		scene.drawables.emplace_back(cur_piece);
+
+		Scene::Drawable &drawable = scene.drawables.back();
+		drawable.pipeline = lit_color_texture_program_pipeline;
+		drawable.pipeline.vao = board_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = cakes[idx].type;
+		drawable.pipeline.start = cakes[idx].start;
+		drawable.pipeline.count = cakes[idx].count;
 	}
 	pieces_remaining -= 1;
 }
 
 void PlayMode::update_score() {
-	// TODO: check patterns
+	std::list<std::string> neighbors = get_neighbor_names();
+	if (neighbors.size() > 0) {
+		std::string cur_name = cur_piece->name;
+		for (auto const &name : neighbors) {
+			int cur_idx = get_index_from_name(cur_name);
+			int idx = get_index_from_name(name);
+			for (int i = 0; i < 4; i++) {
+				if ((idx & 1) == 1 && (cur_idx & 1) == 1) {
+					cur_score += 10;
+				}
+				idx >>= 1;
+				cur_idx >>= 1;
+			}
+		}
+	}
+
 	if (DEBUG) {
 		std::cout << "[progress] score: " << cur_score << "|occupied: " << pieces_dropped << "|remaining: " << pieces_remaining << std::endl;
 	}	
@@ -315,24 +426,6 @@ void PlayMode::update_score() {
 }
 
 void PlayMode::update(float elapsed) {
-
-	//slowly rotates through [0,1):
-	// wobble += elapsed / 10.0f;
-	// wobble -= std::floor(wobble);
-
-	// hip->rotation = hip_base_rotation * glm::angleAxis(
-	// 	glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
-	// 	glm::vec3(0.0f, 1.0f, 0.0f)
-	// );
-	// upper_leg->rotation = upper_leg_base_rotation * glm::angleAxis(
-	// 	glm::radians(7.0f * std::sin(wobble * 2.0f * 2.0f * float(M_PI))),
-	// 	glm::vec3(0.0f, 0.0f, 1.0f)
-	// );
-	// lower_leg->rotation = lower_leg_base_rotation * glm::angleAxis(
-	// 	glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
-	// 	glm::vec3(0.0f, 0.0f, 1.0f)
-	// );
-
 	highlight_transform->parent = chunk_transforms[cur_row*SIZE+cur_col];
 
 	{ // drop the pieces
@@ -340,10 +433,16 @@ void PlayMode::update(float elapsed) {
 			if (!board[idx] or momentum[idx] <= 0.0f) {
 				continue;
 			}
+			float offset;
+			if (board_piece_transforms[idx]->name[0] == 'P') {
+				offset = board_z_offset_pizza;
+			} else {
+				offset = board_z_offset_cake;
+			}
 			piece_drop_speed[idx] += gravity * elapsed;
 			board_piece_transforms[idx]->position.z = board_piece_transforms[idx]->position.z + elapsed * piece_drop_speed[idx];
-			if (board_piece_transforms[idx]->position.z <= board_z_offset) {
-				board_piece_transforms[idx]->position.z = board_z_offset;
+			if (board_piece_transforms[idx]->position.z <= offset) {
+				board_piece_transforms[idx]->position.z = offset;
 				piece_drop_speed[idx] = piece_drop_speed[idx] * -0.5f;
 				momentum[idx] = piece_drop_speed[idx] * mass;
 			}
@@ -351,7 +450,6 @@ void PlayMode::update(float elapsed) {
 	}
 
 	{ // move camera
-
 		//combine inputs into a move:
 		constexpr float PlayerSpeed = 30.0f;
 		glm::vec2 move = glm::vec2(0.0f);
@@ -383,7 +481,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
 
 	//set up light type and position for lit_color_texture_program:
-	// TODO: consider using the Light(s) in the scene to do this
 	glUseProgram(lit_color_texture_program->program);
 	glUniform1i(lit_color_texture_program->LIGHT_TYPE_int, 1);
 	glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f,-1.0f)));
@@ -399,13 +496,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 	GL_ERRORS(); //print any errors produced by this setup code
 
-	// cake->transform->parent = chunk->transform;
-	// cake->transform->position = glm::vec3(2.0f, 2.0f, 2.0f);
-	// std::cout << glm::to_string(cake->transform->position) << std::endl;
-	// std::cout << glm::to_string(chunk->transform->position) << std::endl;
-	// for (auto const &drawable : scene.drawables) {
-	// 	std::cout << drawable.transform->name << " " << glm::to_string(drawable.transform->position) << std::endl;
-	// }
 	scene.draw(*camera);
 
 	{ //use DrawLines to overlay some text:
@@ -419,14 +509,69 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		lines.draw_text("Mouse & WASD - move camera | ESC - ungrab mouse | Arrow keys - select | RETURN - place | X - skip",
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		lines.draw_text("Mouse & WASD - move camera | ESC - ungrab mouse | Arrow keys - select | RETURN - place | X - skip",
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+
+		if (gameState == GameState::END) {
+			if (msg_flag == 3) {
+				lines.draw_text("No more food remaining! Game ended with score " + std::to_string(cur_score),
+					glm::vec3(-aspect + 0.1f * H, 0.9f, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+				float ofs = 2.0f / drawable_size.y;
+				lines.draw_text("No more food remaining! Game ended with score " + std::to_string(cur_score),
+					glm::vec3(-aspect + 0.1f * H + ofs, 0.9f + ofs, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+			} else if (msg_flag == 4) {
+				lines.draw_text("You have filled all the space! Game completed with score " + std::to_string(cur_score),
+					glm::vec3(-aspect + 0.1f * H, 0.9f, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+				float ofs = 2.0f / drawable_size.y;
+				lines.draw_text("You have filled all the space! Game completed with score " + std::to_string(cur_score),
+					glm::vec3(-aspect + 0.1f * H + ofs, 0.9f + ofs, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+			}
+		} else {
+			lines.draw_text("Current Score - " + std::to_string(cur_score) + " | # of Pieces Remaining - " + std::to_string(pieces_remaining) + "/" + std::to_string(50),
+				glm::vec3(-aspect + 0.1f * H, 0.9f, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+			float ofs = 2.0f / drawable_size.y;
+			lines.draw_text("Current Score - " + std::to_string(cur_score) + " | # of Pieces Remaining - " + std::to_string(pieces_remaining) + "/" + std::to_string(50),
+				glm::vec3(-aspect + 0.1f * H + ofs, 0.9f + ofs, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+			if (msg_flag == 1) {
+				lines.draw_text("Must share at least 2 toppings with any adjacent (orthogonal) piece or be isolated",
+					glm::vec3(-aspect + 0.1f * H, 0.8f, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+				float ofs = 2.0f / drawable_size.y;
+				lines.draw_text("Must share at least 2 toppings with any adjacent (orthogonal) piece or be isolated",
+					glm::vec3(-aspect + 0.1f * H + ofs, 0.8f + ofs, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+			} else if (msg_flag == 2) {
+				lines.draw_text("Space already filled",
+					glm::vec3(-aspect + 0.1f * H, 0.8f, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+				float ofs = 2.0f / drawable_size.y;
+				lines.draw_text("Space already filled",
+					glm::vec3(-aspect + 0.1f * H + ofs, 0.8f + ofs, 0.0),
+					glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+					glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+			}
+		}
 	}
 }
