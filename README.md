@@ -1,4 +1,4 @@
-# Pizza Cake
+# Too EZ Pizza Cake
 
 **Author**: Joanna Yao
 
